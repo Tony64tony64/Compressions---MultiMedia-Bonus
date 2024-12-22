@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Compression Tool</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to bottom, #1f1f1f, #4a4a4a);
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 2.5em;
+      color: #f4f4f9;
+    }
+    .upload-area {
+      padding: 30px;
+      border: 3px dashed #ffffff;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .upload-area:hover {
+      background: #3a3a3a;
+    }
+    .upload-area p {
+      font-size: 1.2em;
+      color: #bfbfbf;
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      background-color: #007bff;
+      color: #ffffff;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    button:disabled {
+      background-color: #5a5a5a;
+      cursor: not-allowed;
+    }
+    .image-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+    }
+    .image-comparison {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .image-wrapper {
+      background: #2e2e2e;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .image-wrapper img {
+      max-width: 150px;
+      height: auto;
+      border: 3px solid #bfbfbf;
+      border-radius: 10px;
+      transition: transform 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+    .image-wrapper img:hover {
+      transform: scale(1.1);
+    }
+    .image-wrapper img.selected {
+      border-color: #007bff;
+    }
+    .image-wrapper p {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #d3d3d3;
+    }
+    #gallery h2 {
+      margin-top: 40px;
+      font-size: 1.8em;
+      color: #f4f4f9;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Compression Tool</h1>
+    <div id="uploadArea" class="upload-area">
+      <p>Drag & Drop your images here or click to upload</p>
+      <div id="previewArea"></div>
+    </div>
+    <button id="uploadButton">Upload Images</button>
+    <input id="imageInput" type="file" multiple accept="image/*" style="display:none">
+    <button id="compressButton" disabled>Compress Images</button>
+    <div id="gallery" class="image-gallery hidden"></div>
+    <button id="downloadButton" class="hidden">Download Selected Image</button>
+  </div>
+  <script>
+    const uploadArea = document.getElementById("uploadArea");
+    const imageInput = document.getElementById("imageInput");
+    const compressButton = document.getElementById("compressButton");
+    const gallery = document.getElementById("gallery");
+    const downloadButton = document.getElementById("downloadButton");
+    const previewArea = document.getElementById("previewArea");
+    let selectedImageFiles = [];
+
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.style.background = "#3a3a3a"; });
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.style.background = "none"; });
+    uploadArea.addEventListener("click", () => {
+      imageInput.click(); });
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadArea.style.background = "none";
+      handleFiles(e.dataTransfer.files); });
+    document.getElementById("uploadButton").addEventListener("click", () => {
+      imageInput.click();  });
+    imageInput.addEventListener("change", (e) => {
+      handleFiles(e.target.files); });
+
+    function handleFiles(files) {
+      const validFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+      selectedImageFiles = validFiles;
+      showImagePreview(validFiles);
+      if (validFiles.length > 0) {
+        compressButton.disabled = false;
+      }
+    }
+
+    function showImagePreview(files) {
+      previewArea.innerHTML = "";
+      files.forEach((file) => {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        img.style.maxWidth = "150px";
+        img.style.margin = "10px";
+        previewArea.appendChild(img);
+      });
+    }
+
+    compressButton.addEventListener("click", async () => {
+      if (selectedImageFiles.length === 0) return;
+      gallery.innerHTML = "";
+      for (const file of selectedImageFiles) {
+        const compressedImages = await compressImage(file);
+        displayComparison(file.name, URL.createObjectURL(file), compressedImages);
+      }
+      gallery.classList.remove("hidden");
+      downloadButton.classList.remove("hidden");
+    });
+
+    async function compressImage(file) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = await loadImage(URL.createObjectURL(file));
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const compressedImages = [];
+      const qualities = [0.75, 0.5, 0.25];
+      qualities.forEach((quality) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL("image/jpeg", quality);
+        compressedImages.push(compressed);
+      });
+      return compressedImages;
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = src;
+      });
+    }
+
+    function displayComparison(fileName, original, compressedImages) {
+      const wrapper = document.createElement("div");
+      wrapper.classList.add("image-comparison");
+      const qualities = ["Original", "75% Quality", "50% Quality", "25% Quality"];
+      [original, ...compressedImages].forEach((src, index) => {
+        const imageWrapper = document.createElement("div");
+        imageWrapper.classList.add("image-wrapper");
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = qualities[index];
+        img.addEventListener("click", () => selectImage(img));
+        const label = document.createElement("p");
+        label.textContent = qualities[index];
+        imageWrapper.appendChild(img);
+        imageWrapper.appendChild(label);
+        wrapper.appendChild(imageWrapper); });
+      gallery.appendChild(wrapper);
+    }
+
+    function selectImage(img) {
+      const images = document.querySelectorAll(".image-gallery img");
+      images.forEach((image) => image.classList.remove("selected"));
+      img.classList.add("selected");
+      downloadButton.onclick = () => {
+        const link = document.createElement("a");
+        link.href = img.src;
+        link.download = "compressed-image.jpg";
+        link.click();
+      };
+    }
+  </script>
+</body>
+</html>
