@@ -102,6 +102,11 @@
     .hidden {
       display: none;
     }
+    .message {
+      font-size: 1.2em;
+      color: #bfbfbf;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -113,9 +118,10 @@
     </div>
     <button id="uploadButton">Upload Images</button>
     <input id="imageInput" type="file" multiple accept="image/*" style="display:none">
-    <button id="compressButton" disabled>Compress Images</button>
+    <button id="compressButton" class="hidden">Compress Images</button>
     <div id="gallery" class="image-gallery hidden"></div>
     <button id="downloadButton" class="hidden">Download Selected Image</button>
+    <div id="message" class="message"></div>
   </div>
   <script>
     const uploadArea = document.getElementById("uploadArea");
@@ -124,6 +130,7 @@
     const gallery = document.getElementById("gallery");
     const downloadButton = document.getElementById("downloadButton");
     const previewArea = document.getElementById("previewArea");
+    const messageArea = document.getElementById("message");
     let selectedImageFiles = [];
 
     uploadArea.addEventListener("dragover", (e) => {
@@ -147,7 +154,16 @@
       selectedImageFiles = validFiles;
       showImagePreview(validFiles);
       if (validFiles.length > 0) {
-        compressButton.disabled = false;
+        compressButton.classList.add("hidden");
+        validFiles.forEach((file) => {
+          const fileSize = file.size / 1024 / 1024; // Size in MB
+          if (fileSize >= 2) {
+            compressButton.classList.remove("hidden");
+            messageArea.textContent = `The image '${file.name}' is ${fileSize.toFixed(2)}MB, and will be compressed.`;
+          } else {
+            messageArea.textContent = `The image '${file.name}' is already less than 2MB and doesn't need compression.`;
+          }
+        });
       }
     }
 
@@ -167,8 +183,14 @@
       if (selectedImageFiles.length === 0) return;
       gallery.innerHTML = "";
       for (const file of selectedImageFiles) {
-        const compressedImages = await compressImage(file);
-        displayComparison(file.name, URL.createObjectURL(file), compressedImages);
+        const fileSize = file.size / 1024 / 1024; // Size in MB
+        if (fileSize < 2) {
+          messageArea.textContent = `The image '${file.name}' is already less than 2MB and doesn't need compression.`;
+        } else {
+          messageArea.textContent = `The image '${file.name}' is ${fileSize.toFixed(2)}MB, and will be compressed.`;
+          const compressedImages = await compressImage(file);
+          displayComparison(file.name, URL.createObjectURL(file), compressedImages);
+        }
       }
       gallery.classList.remove("hidden");
       downloadButton.classList.remove("hidden");
