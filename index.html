@@ -159,9 +159,9 @@
           const fileSize = file.size / 1024 / 1024; // Size in MB
           if (fileSize >= 2) {
             compressButton.classList.remove("hidden");
-            messageArea.textContent = `The image '${file.name}' is ${fileSize.toFixed(2)}MB, and will be compressed.`;
+            messageArea.textContent = `The image '${file.name}' is ${fileSize.toFixed(2)}MB, and will be compressed. Click on Compress Images Button and Choose the Compression Rate needed`;
           } else {
-            messageArea.textContent = `The image '${file.name}' is already less than 2MB and doesn't need compression.`;
+            messageArea.textContent = `The image '${file.name}' is already less than 2MB and doesn't need compression . Please Find a 2MB Image or greater in size to see Compress Options `;
           }
         });
       }
@@ -185,7 +185,7 @@
       for (const file of selectedImageFiles) {
         const fileSize = file.size / 1024 / 1024; // Size in MB
         if (fileSize < 2) {
-          messageArea.textContent = `The image '${file.name}' is already less than 2MB and doesn't need compression.`;
+          messageArea.textContent = `The image '${file.name}' is already less than 2MB and doesn't need compression. `;
         } else {
           messageArea.textContent = `The image '${file.name}' is ${fileSize.toFixed(2)}MB, and will be compressed.`;
           const compressedImages = await compressImage(file);
